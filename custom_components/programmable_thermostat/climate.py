@@ -95,10 +95,13 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
         self._target_temp = float(hass.states.get(target_entity_id).state)
         self._restore_temp = self._target_temp
         # To avoid error in case real temp sensor take some time to return a number
+        self._cur_temp = self._target_temp
+        # To avoid error in case real temp sensor take some time to return a number
         if hass.states.get(sensor_entity_id).state != STATE_UNKNOWN:
-            self._cur_temp = float(hass.states.get(sensor_entity_id).state)
-        else:
-            self._cur_temp = self._target_temp
+            try:
+                self._cur_temp = float(hass.states.get(sensor_entity_id).state)
+            except ValueError as ex:
+                _LOGGER.warning("Unable to update from sensor: %s", ex)
         self._active = False
         self._temp_lock = asyncio.Lock()
         self._hvac_action = CURRENT_HVAC_OFF
