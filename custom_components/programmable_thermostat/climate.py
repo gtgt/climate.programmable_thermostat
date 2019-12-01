@@ -223,16 +223,17 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
 
     async def _async_turn_on(self, mode=None):
         """Turn heater toggleable device on."""
-        data = {ATTR_ENTITY_ID: "none"}
         if mode == "heat":
             data = {ATTR_ENTITY_ID: self.heater_entity_id}
             self._hvac_action = CURRENT_HVAC_HEAT
+            _LOGGER.info("[%s] New action to %s: %s (%s)", self._name, self.heater_entity_id, self._hvac_action, mode)
         elif mode == "cool":
             data = {ATTR_ENTITY_ID: self.cooler_entity_id}
             self._hvac_action = CURRENT_HVAC_COOL
+            _LOGGER.info("[%s] New action to %s: %s (%s)", self._name, self.cooler_entity_id, self._hvac_action, mode)
         else:
-            _LOGGER.error("No type has been passed to turn_on function")
-        _LOGGER.info("[%s] New action to %s: %s (%s)", self._name, data["ATTR_ENTITY_ID"], self._hvac_action, mode)
+            _LOGGER.warn("No type has been passed to turn_on function")
+            return
         await self.hass.services.async_call(HA_DOMAIN, SERVICE_TURN_ON, data)
         await self.async_update_ha_state()
 
@@ -243,7 +244,8 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
         elif mode == "cool":
             data = {ATTR_ENTITY_ID: self.cooler_entity_id}
         else:
-            _LOGGER.error("No type has been passed to turn_off function")
+            _LOGGER.warn("No type has been passed to turn_off function")
+            return
         self._set_hvac_action_off(mode=mode)
         await self.hass.services.async_call(HA_DOMAIN, SERVICE_TURN_OFF, data)
         await self.async_update_ha_state()
