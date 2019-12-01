@@ -96,9 +96,10 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
         self._restore_temp = self._target_temp
         self._cur_temp = self._target_temp
         # To avoid error in case real temp sensor take some time to return a number
-        if hass.states.get(sensor_entity_id).state != STATE_UNKNOWN:
+        sensor_state = hass.states.get(sensor_entity_id)
+        if sensor_state is not None and sensor_state.state != STATE_UNKNOWN:
             try:
-                self._cur_temp = float(hass.states.get(sensor_entity_id).state)
+                self._cur_temp = float(sensor_state.state)
             except ValueError as ex:
                 _LOGGER.warning("Unable to update from sensor: %s", ex)
         self._active = False
@@ -222,6 +223,7 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
 
     async def _async_turn_on(self, mode=None):
         """Turn heater toggleable device on."""
+        data = {ATTR_ENTITY_ID: "none"}
         if mode == "heat":
             data = {ATTR_ENTITY_ID: self.heater_entity_id}
             self._hvac_action = CURRENT_HVAC_HEAT
@@ -230,7 +232,7 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
             self._hvac_action = CURRENT_HVAC_COOL
         else:
             _LOGGER.error("No type has been passed to turn_on function")
-        _LOGGER.info("new action %s (%s)", self._hvac_action, mode)
+        _LOGGER.info("[%s] New action to %s: %s (%s)", self._name, data["ATTR_ENTITY_ID"], self._hvac_action, mode)
         await self.hass.services.async_call(HA_DOMAIN, SERVICE_TURN_ON, data)
         await self.async_update_ha_state()
 
@@ -336,7 +338,7 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
            (mode == "heat" and not self._hvac_mode == HVAC_MODE_COOL)) and \
            not self._hvac_mode == HVAC_MODE_HEAT_COOL):
             self._hvac_action = CURRENT_HVAC_OFF
-            _LOGGER.info("new action %s", self._hvac_action)
+            _LOGGER.info("[%s] Set off: %s (%s)", self._name, self._hvac_action, self._hvac_mode)
 
     @callback
     def _async_switch_changed(self, entity_id, old_state, new_state):
