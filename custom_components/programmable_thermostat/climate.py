@@ -4,7 +4,7 @@ import logging
 
 import voluptuous as vol
 
-from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateDevice
+from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateEntity
 from homeassistant.components.climate.const import (
     ATTR_HVAC_MODE, CURRENT_HVAC_COOL, CURRENT_HVAC_HEAT, CURRENT_HVAC_IDLE,
     CURRENT_HVAC_OFF, HVAC_MODE_COOL, HVAC_MODE_HEAT, HVAC_MODE_OFF,HVAC_MODE_HEAT_COOL,
@@ -73,7 +73,7 @@ async def async_setup_platform(hass, config, async_add_entities,
         max_temp, target_entity_id, tolerance, initial_hvac_mode, unit)])
 
 
-class ProgrammableThermostat(ClimateDevice, RestoreEntity):
+class ProgrammableThermostat(ClimateEntity, RestoreEntity):
     """ProgrammableThermostat."""
 
     def __init__(self, hass, name, heater_entity_id, cooler_entity_id,
@@ -152,8 +152,7 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
                 self._async_update_temp(sensor_state)
             target_state = self.hass.states.get(self.target_entity_id)
             if target_state and \
-               target_state.state != STATE_UNKNOWN and \
-               self._hvac_mode != HVAC_MODE_HEAT_COOL:
+               target_state.state != STATE_UNKNOWN:
                 self._async_update_program_temp(target_state)
 
         self.hass.bus.async_listen_once(
@@ -275,6 +274,7 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
     async def async_set_temperature(self, **kwargs):
         """Set new target temperature."""
         temperature = kwargs.get(ATTR_TEMPERATURE)
+        _LOGGER.info("[%s] Async set target temp of %s: %s (%s)", self._name, self.cooler_entity_id, temperature, self._target_temp)
         if temperature is None:
             return
         self._target_temp = float(temperature)
@@ -295,7 +295,6 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
             return
         self._restore_temp = float(new_state.state)
         _LOGGER.info("[%s] Target temp changed: %f", self._name, self._restore_temp)
-        """if self._hvac_mode != HVAC_MODE_HEAT_COOL:"""
         self._async_restore_program_temp()
         await self.control_system_mode()
         await self.async_update_ha_state()
@@ -359,23 +358,25 @@ class ProgrammableThermostat(ClimateDevice, RestoreEntity):
         try:
             self._cur_temp = float(state.state)
         except ValueError as ex:
-            _LOGGER.error("Unable to update from sensor: %s", ex)
+            _LOGGER.error("Unable to update %s as temp value from sensor: %s", state.state, ex)
 
     @callback
     def _async_restore_program_temp(self):
         """Update thermostat with latest state from sensor to have back automatic value."""
+        _LOGGER.info("[%s] Restore target temp to %s: %s (%s)", self._name, self.cooler_entity_id, self._restore_temp, self._target_temp)
         try:
             self._target_temp = self._restore_temp
         except ValueError as ex:
-            _LOGGER.error("Unable to update from sensor: %s", ex)
+            _LOGGER.error("Unable to restore %s as target temp value from sensor: %s", state.state, ex)
 
     @callback
     def _async_update_program_temp(self, state):
         """Update thermostat with latest state from sensor."""
+        _LOGGER.info("[%s] Update target temp to %s: %s (%s)", self._name, self.cooler_entity_id, state.states, self._target_temp)
         try:
             self._target_temp = float(state.state)
         except ValueError as ex:
-            _LOGGER.error("Unable to update from sensor: %s", ex)
+            _LOGGER.error("Unable to update %s as target temp value from sensor: %s", state.state, ex)
 
     @property
     def should_poll(self):
