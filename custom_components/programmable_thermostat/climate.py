@@ -369,7 +369,7 @@ class ProgrammableThermostat(ClimateEntity, RestoreEntity):
 
     @callback
     def _async_update_temp(self, state):
-        if state is None or state is 'unavailable' or self._cur_temp == float(state.state):
+        if state is None or state.state is STATE_UNKNOWN or self._cur_temp == float(state.state):
           return
         """Update thermostat with latest state from sensor."""
         try:
@@ -390,7 +390,7 @@ class ProgrammableThermostat(ClimateEntity, RestoreEntity):
 
     @callback
     def _async_update_program_temp(self, state):
-        if state is None or state is 'unavailable' or self._target_temp == float(state.state):
+        if state is None or state.state is STATE_UNKNOWN or self._target_temp == float(state.state):
           return
         """Update thermostat with latest state from sensor."""
         _LOGGER.info("[%s] Update target temp to %s: %s (%s)", self._name, self.target_entity_id, state.state, self._target_temp)
