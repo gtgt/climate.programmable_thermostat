@@ -303,7 +303,7 @@ class ProgrammableThermostat(ClimateEntity, RestoreEntity):
 
     async def _async_target_changed(self, entity_id, old_state, new_state):
         """Handle temperature changes in the program."""
-        if new_state is None:
+        if new_state is None or self._restore_temp == float(new_state.state):
             return
         self._restore_temp = float(new_state.state)
         _LOGGER.info("[%s] Target temp changed on %s to %f", self._name, entity_id, self._restore_temp)
