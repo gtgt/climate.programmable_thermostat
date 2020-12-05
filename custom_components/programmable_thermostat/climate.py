@@ -328,14 +328,14 @@ class ProgrammableThermostat(ClimateEntity, RestoreEntity):
         else:
             _LOGGER.error("No type has been passed to control_thermo function")
         self._check_mode_type = mode
-        _LOGGER.debug("[%s] Control thermo called: delta=%f, target=%f, curr=%f (%s)", self._name, delta, self._target_temp, self._cur_temp, mode)
+        _LOGGER.debug("[%s] Control thermo called: delta=%f, tolerance=%f, target=%f, curr=%f (%s)", self._name, delta, self._tolerance, self._target_temp, self._cur_temp, mode)
         async with self._temp_lock:
             if not self._active and None not in (self._cur_temp, self._target_temp):
                 self._active = True
                 _LOGGER.info("[%s] Obtained current and target temperature. Generic thermostat active. %s, %s", self._name, self._cur_temp, self._target_temp)
                 self.async_schedule_update_ha_state()
 
-            if not self._active or self._hvac_mode == HVAC_MODE_OFF or self._hvac_mode == hvac_mode:
+            if not self._active or self._hvac_mode == HVAC_MODE_OFF:
                 return
 
             if self._is_device_active:
