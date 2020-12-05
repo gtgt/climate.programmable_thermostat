@@ -95,7 +95,7 @@ class ProgrammableThermostat(ClimateEntity, RestoreEntity):
             self._target_temp = float(hass.states.get(target_entity_id).state)
         except ValueError as ex:
             self._target_temp = 22.0"""
-            
+
         self._target_temp = None
         self._restore_temp = None
         self._cur_temp = None
@@ -315,7 +315,7 @@ class ProgrammableThermostat(ClimateEntity, RestoreEntity):
         """ Check if values are ready..."""
         if self._target_temp is None or self._cur_temp is None:
             return
-          
+
         """Check if we need to turn heating on or off."""
         if mode == "heat":
             hvac_mode = HVAC_MODE_COOL
@@ -338,12 +338,11 @@ class ProgrammableThermostat(ClimateEntity, RestoreEntity):
             if not self._active or self._hvac_mode == HVAC_MODE_OFF:
                 return
 
-            if self._is_device_active:
-                if delta <= 0:
+            if delta >= self._tolerance:
+                await self._async_turn_on(mode=mode)
+            elif delta <= -1 * self._tolerance:
+                if self._is_device_active:
                     await self._async_turn_off(mode=mode)
-            else:
-                if delta >= self._tolerance:
-                    await self._async_turn_on(mode=mode)
                 else:
                     self._set_hvac_action_off(mode=mode)
 
@@ -357,7 +356,7 @@ class ProgrammableThermostat(ClimateEntity, RestoreEntity):
            not self._hvac_mode == HVAC_MODE_HEAT_COOL and \
            not self._hvac_action == CURRENT_HVAC_OFF):
             self._hvac_action = CURRENT_HVAC_OFF
-            _LOGGER.info("[%s] Set hvac action to current hvac off: %s (%s)", self._name, self._hvac_action, self._hvac_mode)
+            _LOGGER.info("[%s] Set hvac action to current hvac off: %s (%s/%s)", self._name, self._hvac_action, mode, self._hvac_mode)
 
     @callback
     def _async_switch_changed(self, entity_id, old_state, new_state):
